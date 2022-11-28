@@ -1,7 +1,6 @@
 (ns metabase.api.common
   "Dynamic variables and utility functions/macros for writing API functions."
-  (:require [clojure.set :as set]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha :as s]
             [clojure.string :as str]
             [clojure.tools.logging :as log]
             [clout.core :as clout]
@@ -298,7 +297,7 @@
               (and content-length
                    (zero? content-length)
                    ;; trust but verify
-                   (neg? (.read (:body request))))
+                   (neg? (.read ^java.io.InputStream (:body request))))
               matched
 
               ;; provided type matches
@@ -308,7 +307,7 @@
 
               ;; no content length (ie, no body) don't care about content-type
               (and (nil? content-length)
-                   (neg? (.read (:body request))))
+                   (neg? (.read ^java.io.InputStream (:body request))))
               matched
 
               :else
