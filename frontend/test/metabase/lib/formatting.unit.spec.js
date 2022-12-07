@@ -69,15 +69,15 @@ describe("formatting", () => {
     });
     describe("in enclosing negative mode", () => {
       it("should format -4 as (4)", () => {
-        expect(formatNumber(-4, { negativeInParentheses: true })).toEqual(
+        expect(formatNumber(-4, { negative_in_parentheses: true })).toEqual(
           "(4)",
         );
       });
       it("should format 7 as 7", () => {
-        expect(formatNumber(7, { negativeInParentheses: true })).toEqual("7");
+        expect(formatNumber(7, { negative_in_parentheses: true })).toEqual("7");
       });
       it("should format 0 as 0", () => {
-        expect(formatNumber(0, { negativeInParentheses: true })).toEqual("0");
+        expect(formatNumber(0, { negative_in_parentheses: true })).toEqual("0");
       });
     });
     describe("in compact mode", () => {
@@ -188,30 +188,6 @@ describe("formatting", () => {
         expect(
           formatNumber(-1.23, { number_style: "currency", currency: "USD" }),
         ).toBe("-$1.23");
-      });
-
-      describe("with currency_in_header = true and type = cell", () => {
-        it("should handle positive currency", () => {
-          expect(
-            formatNumber(1.23, {
-              number_style: "currency",
-              currency: "USD",
-              currency_in_header: true,
-              type: "cell",
-            }),
-          ).toBe("1.23");
-        });
-
-        it("should handle negative currency", () => {
-          expect(
-            formatNumber(-1.23, {
-              number_style: "currency",
-              currency: "USD",
-              currency_in_header: true,
-              type: "cell",
-            }),
-          ).toBe("-1.23");
-        });
       });
     });
   });
