@@ -31,7 +31,8 @@
                               :percentile-aggregations                false
                               :advanced-math-expressions              false
                               :standard-deviation-aggregations        false
-                              :now                                    true}]
+                              :now                                    true
+                              :datetime-diff                          true}]
   (defmethod driver/supports? [:sqlite feature] [_ _] supported?))
 
 ;; SQLite `LIKE` clauses are case-insensitive by default, and thus cannot be made case-sensitive. So let people know
@@ -359,6 +360,70 @@
 (defmethod sql.qp/current-datetime-honeysql-form :sqlite
   [_]
   (hsql/call :datetime (hx/literal :now)))
+
+(defn extract [unit x] (sql.qp/date :sqlite unit x))
+
+(defmethod sql.qp/->honeysql [:sqlite :datetime-diff]
+  [driver [_ x y unit]]
+  (let [x (sql.qp/->honeysql driver x)
+        y (sql.qp/->honeysql driver y)]
+    (case unit
+      :year
+      (let [positive-diff (fn [a b] ; precondition: a <= b
+                            (hx/-
+                             (hx/- (extract :year b) (extract :year a))
+                             ;; decrement if a is later than b in the year calendar
+                             (hx/cast
+                              :integer
+                              (hsql/call
+                               :or
+                               (hsql/call :> (extract :month-of-year a) (extract :month-of-year b))
+                               (hsql/call
+                                :and
+                                (hsql/call := (extract :month-of-year a) (extract :month-of-year b))
+                                (hsql/call :> (extract :day-of-month a) (extract :day-of-month b)))))))]
+        (hsql/call :case (hsql/call :<= x y) (positive-diff x y) :else (hx/* -1 (positive-diff y x))))
+
+      :quarter
+      (let [positive-diff
+            (fn [a b]
+              (hx/cast
+               :integer
+               (hx/floor (hx// (hx/- (hx/+ (hx/* (hx/- (extract :year b) (extract :year a)) 12)
+                                           (hx/- (extract :month-of-year b) (extract :month-of-year a)))
+                                     (hx/cast :integer (hsql/call :> (extract :day-of-month a) (extract :day-of-month b))))
+                               3))))]
+        (hsql/call :case (hsql/call :<= x y) (positive-diff x y) :else (hx/* -1 (positive-diff y x))))
+
+      :month
+      (let [positive-diff
+            (fn [a b]
+              (hx/- (hx/+ (hx/* (hx/- (extract :year b) (extract :year a)) 12)
+                          (hx/- (extract :month-of-year b) (extract :month-of-year a)))
+                    (hx/cast :integer (hsql/call :> (extract :day-of-month a) (extract :day-of-month b)))))]
+        (hsql/call :case (hsql/call :<= x y) (positive-diff x y) :else (hx/* -1 (positive-diff y x))))
+
+      :week
+      (let [positive-diff
+            (fn [a b]
+              (hx/cast :integer (hx// (hsql/call :- (hsql/call :julianday (->date b)) (hsql/call :julianday (->date a)))
+                                      7)))]
+        (hsql/call :case (hsql/call :<= x y) (positive-diff x y) :else (hx/* -1 (positive-diff y x))))
+
+      :day
+      (let [positive-diff
+            (fn [a b]
+              (hx/cast :integer (hsql/call :- (hsql/call :julianday (->date b)) (hsql/call :julianday (->date a)))))]
+        (hsql/call :case (hsql/call :<= x y) (positive-diff x y) :else (hx/* -1 (positive-diff y x))))
+
+      (:hour :minute :second)
+      (let [positive-diff
+            (fn [a b]
+              (-> (hsql/call :- (hsql/call :julianday b) (hsql/call :julianday a))
+                  (hx/* (case unit :hour 24 :minute 1440 :second 86400))
+                  hx/floor
+                  (hx/->integer)))]
+        (hsql/call :case (hsql/call :<= x y) (positive-diff x y) :else (hx/* -1 (positive-diff y x)))))))
 
 ;; SQLite's JDBC driver is fussy and won't let you change connections to read-only after you create them. So skip that
 ;; step. SQLite doesn't have a notion of session timezones so don't do that either. The only thing we're doing here from
