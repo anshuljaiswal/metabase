@@ -13075,12 +13075,6 @@ databaseChangeLog:
                   remarks: "The parameter ID"
                   constraints:
                     nullable: false
-              - column:
-                  name: column_config
-                  type: ${text.type}
-                  remarks: "JSON-encoded configuration specifying the card columns to use"
-                  constraints:
-                    nullable: false
         - addUniqueConstraint:
             tableName: values_card
             columnNames: parameterized_object_id, parameterized_object_type, parameter_id, card_id

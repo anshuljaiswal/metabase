@@ -13,8 +13,7 @@
                  models/IModel
                  (merge models/IModelDefaults
                         {:properties (constantly {:timestamped? true})
-                         :types      (constantly {:column_config             :json
-                                                  :parameterized_object_type :keyword})}))
+                         :types      (constantly {:parameterized_object_type :keyword})}))
 
 (defn- query-for-dashboard
   [{dashboard-id :id :as dashboard} param-key]
