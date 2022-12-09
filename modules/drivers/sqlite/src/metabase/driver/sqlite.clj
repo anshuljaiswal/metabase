@@ -361,12 +361,11 @@
   [_]
   (hsql/call :datetime (hx/literal :now)))
 
-(defn extract [unit x] (sql.qp/date :sqlite unit x))
-
 (defmethod sql.qp/->honeysql [:sqlite :datetime-diff]
   [driver [_ x y unit]]
   (let [x (sql.qp/->honeysql driver x)
-        y (sql.qp/->honeysql driver y)]
+        y (sql.qp/->honeysql driver y)
+        extract (fn [unit x] (sql.qp/date :sqlite unit x))]
     (case unit
       :year
       (let [positive-diff (fn [a b] ; precondition: a <= b
@@ -389,9 +388,14 @@
             (fn [a b]
               (hx/cast
                :integer
-               (hx/floor (hx// (hx/- (hx/+ (hx/* (hx/- (extract :year b) (extract :year a)) 12)
-                                           (hx/- (extract :month-of-year b) (extract :month-of-year a)))
-                                     (hx/cast :integer (hsql/call :> (extract :day-of-month a) (extract :day-of-month b))))
+               (hx/floor (hx// (hx/- (hx/+ (hx/* (hx/- (extract :year b)
+                                                       (extract :year a))
+                                                 12)
+                                           (hx/- (extract :month-of-year b)
+                                                 (extract :month-of-year a)))
+                                     (hx/cast
+                                      :integer
+                                      (hsql/call :> (extract :day-of-month a) (extract :day-of-month b))))
                                3))))]
         (hsql/call :case (hsql/call :<= x y) (positive-diff x y) :else (hx/* -1 (positive-diff y x))))
 
@@ -406,23 +410,29 @@
       :week
       (let [positive-diff
             (fn [a b]
-              (hx/cast :integer (hx// (hsql/call :- (hsql/call :julianday (->date b)) (hsql/call :julianday (->date a)))
+              (hx/cast :integer (hx// (hsql/call :-
+                                                 (hsql/call :julianday (->date b))
+                                                 (hsql/call :julianday (->date a)))
                                       7)))]
         (hsql/call :case (hsql/call :<= x y) (positive-diff x y) :else (hx/* -1 (positive-diff y x))))
 
       :day
       (let [positive-diff
             (fn [a b]
-              (hx/cast :integer (hsql/call :- (hsql/call :julianday (->date b)) (hsql/call :julianday (->date a)))))]
+              (hx/cast :integer (hsql/call :-
+                                           (hsql/call :julianday (->date b))
+                                           (hsql/call :julianday (->date a)))))]
         (hsql/call :case (hsql/call :<= x y) (positive-diff x y) :else (hx/* -1 (positive-diff y x))))
 
       (:hour :minute :second)
       (let [positive-diff
             (fn [a b]
-              (-> (hsql/call :- (hsql/call :julianday b) (hsql/call :julianday a))
+              (-> (hsql/call :-
+                             (hsql/call :julianday b)
+                             (hsql/call :julianday a))
                   (hx/* (case unit :hour 24 :minute 1440 :second 86400))
                   hx/floor
-                  (hx/->integer)))]
+                  hx/->integer))]
         (hsql/call :case (hsql/call :<= x y) (positive-diff x y) :else (hx/* -1 (positive-diff y x)))))))
 
 ;; SQLite's JDBC driver is fussy and won't let you change connections to read-only after you create them. So skip that
