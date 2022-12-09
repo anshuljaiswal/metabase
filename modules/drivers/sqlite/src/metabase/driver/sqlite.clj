@@ -372,7 +372,6 @@
                                      hx/type-info
                                      hx/type-info->db-type
                                      name
-                                     str/lower-case
                                      (re-find #"(?i)^time")))
                           [x y])]
     (when (seq disallowed-types)
