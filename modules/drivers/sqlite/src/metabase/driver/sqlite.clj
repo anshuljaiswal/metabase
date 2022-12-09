@@ -125,8 +125,8 @@
 ;; See also the [SQLite Date and Time Functions Reference](http://www.sqlite.org/lang_datefunc.html).
 
 (defmethod sql.qp/date [:sqlite :default]
-  [driver _ expr]
-  (sql.qp/->honeysql driver expr))
+  [_ _ expr]
+  expr)
 
 (defmethod sql.qp/date [:sqlite :second]
   [driver _ expr]
@@ -363,9 +363,23 @@
 
 (defmethod sql.qp/->honeysql [:sqlite :datetime-diff]
   [driver [_ x y unit]]
-  (let [x (sql.qp/->honeysql driver x)
-        y (sql.qp/->honeysql driver y)
-        extract (fn [unit x] (sql.qp/date :sqlite unit x))]
+  (let [x                (sql.qp/->honeysql driver x)
+        y                (sql.qp/->honeysql driver y)
+        extract          (fn [unit x] (sql.qp/date :sqlite unit x))
+        disallowed-types (keep
+                          (fn [v]
+                            (some->> v
+                                     hx/type-info
+                                     hx/type-info->db-type
+                                     name
+                                     str/lower-case
+                                     (re-find #"(?i)^time")))
+                          [x y])]
+    (when (seq disallowed-types)
+      (throw (ex-info (tru "Only datetime, timestamp, or date types allowed. Found {0}"
+                           (pr-str disallowed-types))
+                      {:found disallowed-types
+                       :type  qp.error-type/invalid-query})))
     (case unit
       :year
       (let [positive-diff
