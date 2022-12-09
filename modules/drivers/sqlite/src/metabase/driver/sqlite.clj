@@ -368,19 +368,20 @@
         extract (fn [unit x] (sql.qp/date :sqlite unit x))]
     (case unit
       :year
-      (let [positive-diff (fn [a b] ; precondition: a <= b
-                            (hx/-
-                             (hx/- (extract :year b) (extract :year a))
-                             ;; decrement if a is later than b in the year calendar
-                             (hx/cast
-                              :integer
-                              (hsql/call
-                               :or
-                               (hsql/call :> (extract :month-of-year a) (extract :month-of-year b))
-                               (hsql/call
-                                :and
-                                (hsql/call := (extract :month-of-year a) (extract :month-of-year b))
-                                (hsql/call :> (extract :day-of-month a) (extract :day-of-month b)))))))]
+      (let [positive-diff
+            (fn [a b] ; precondition: a <= b
+              (hx/-
+               (hx/- (extract :year b) (extract :year a))
+               ;; decrement if a is later than b in the year calendar
+               (hx/cast
+                :integer
+                (hsql/call
+                 :or
+                 (hsql/call :> (extract :month-of-year a) (extract :month-of-year b))
+                 (hsql/call
+                  :and
+                  (hsql/call := (extract :month-of-year a) (extract :month-of-year b))
+                  (hsql/call :> (extract :day-of-month a) (extract :day-of-month b)))))))]
         (hsql/call :case (hsql/call :<= x y) (positive-diff x y) :else (hx/* -1 (positive-diff y x))))
 
       :quarter
@@ -402,8 +403,11 @@
       :month
       (let [positive-diff
             (fn [a b]
-              (hx/- (hx/+ (hx/* (hx/- (extract :year b) (extract :year a)) 12)
-                          (hx/- (extract :month-of-year b) (extract :month-of-year a)))
+              (hx/- (hx/+ (hx/* (hx/- (extract :year b)
+                                      (extract :year a))
+                                12)
+                          (hx/- (extract :month-of-year b)
+                                (extract :month-of-year a)))
                     (hx/cast :integer (hsql/call :> (extract :day-of-month a) (extract :day-of-month b)))))]
         (hsql/call :case (hsql/call :<= x y) (positive-diff x y) :else (hx/* -1 (positive-diff y x))))
 
