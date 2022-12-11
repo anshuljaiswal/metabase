@@ -133,13 +133,13 @@ jobs:
     - uses: actions/checkout@v3
     - run: |
         curl https://raw.githubusercontent.com/metabase/metabase-qa/master/dbs/mongo/certificates/metabase.crt \
-        -o /home/circleci/metabase/metabase/test_resources/ssl/mongo/metabase.crt
+        -o ./test_resources/ssl/mongo/metabase.crt
 
         https://raw.githubusercontent.com/metabase/metabase-qa/master/dbs/mongo/certificates/metabase.key \
-        -o /home/circleci/metabase/metabase/test_resources/ssl/mongo/metabase.key
+        -o ./test_resources/ssl/mongo/metabase.key
 
         https://raw.githubusercontent.com/metabase/metabase-qa/master/dbs/mongo/certificates/metaca.crt \
-        -o /home/circleci/metabase/metabase/test_resources/ssl/mongo/metaca.crt
+        -o ./test_resources/ssl/mongo/metaca.crt
 
         mongod --dbpath /data/db2/ --sslMode requireSSL --sslPEMKeyFile /etc/mongo/metamongo.pem --sslCAFile /etc/mongo/metaca.crt
     - name: Test MongoDB driver (4.0)
@@ -187,13 +187,13 @@ jobs:
     - uses: actions/checkout@v3
     - run: |
         curl https://raw.githubusercontent.com/metabase/metabase-qa/master/dbs/mongo/certificates/metabase.crt \
-        -o /home/circleci/metabase/metabase/test_resources/ssl/mongo/metabase.crt
+        -o ./test_resources/ssl/mongo/metabase.crt
 
         https://raw.githubusercontent.com/metabase/metabase-qa/master/dbs/mongo/certificates/metabase.key \
-        -o /home/circleci/metabase/metabase/test_resources/ssl/mongo/metabase.key
+        -o ./test_resources/ssl/mongo/metabase.key
 
         https://raw.githubusercontent.com/metabase/metabase-qa/master/dbs/mongo/certificates/metaca.crt \
-        -o /home/circleci/metabase/metabase/test_resources/ssl/mongo/metaca.crt
+        -o ./test_resources/ssl/mongo/metaca.crt
 
         mongod --dbpath /data/db2/ --tlsMode requireTLS --tlsCertificateKeyFile /etc/mongo/metamongo.pem --tlsCAFile /etc/mongo/metaca.crt
     - name: Test MongoDB driver (5.0)
