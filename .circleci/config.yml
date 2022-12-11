@@ -36,15 +36,6 @@ executors:
        - image: metabase/qa-databases:mongo-sample-4.0
          command: mongod --dbpath /data/db2/ --sslMode requireSSL --sslPEMKeyFile /etc/mongo/metamongo.pem --sslCAFile /etc/mongo/metaca.crt
 
-  mongo-5-0-ssl:
-     working_directory: /home/circleci/metabase/metabase/
-     docker:
-       - image: metabase/ci:java-11-clj-1.11.0.1100.04-2022-build
-         environment:
-           MB_TEST_MONGO_REQUIRES_SSL: true
-       - image: metabase/qa-databases:mongo-sample-5.0
-         command: mongod --dbpath /data/db2/ --tlsMode requireTLS --tlsCertificateKeyFile /etc/mongo/metamongo.pem --tlsCAFile /etc/mongo/metaca.crt
-
   presto-186:
     working_directory: /home/circleci/metabase/metabase/
     docker:
@@ -583,7 +574,7 @@ workflows:
       - test-driver:
           matrix:
             parameters:
-              version: ["mongo-4-0-ssl", "mongo-5-0-ssl"]
+              version: ["mongo-4-0-ssl"]
           name: be-tests-<< matrix.version >>-ee
           description: "(<< matrix.version >>)"
           requires:
