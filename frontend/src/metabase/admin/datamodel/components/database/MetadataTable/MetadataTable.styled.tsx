@@ -41,8 +41,6 @@ const headerInputsStyles = css`
 `;
 
 export const TableNameInput = styled(InputBlurChange)`
-  //${headerInputsStyles}
-
   ${InputBlurChange.Field} {
     width: 100%;
     font-weight: 700;
@@ -55,7 +53,6 @@ export const TableNameInput = styled(InputBlurChange)`
 `;
 
 export const TableDescriptionInput = styled(InputBlurChange)`
-  //${headerInputsStyles}
   ${InputBlurChange.Field} {
     width: 100%;
     color: ${color("text-dark")};
